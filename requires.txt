@@ -12,3 +12,7 @@ wordcloud
 datasets
 fasttext-wheel
 scipy==1.10.1
+mecab-python3
+unidic-lite
+fugashi
+ipadic

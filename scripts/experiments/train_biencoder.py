@@ -278,7 +278,7 @@ if __name__ == '__main__':
     # 2. Initialize the BiEncoder Trainer.
     trainer = BiEncoderTrainer(model=model, 
                                loss_fn=nn.CrossEntropyLoss(), 
-                               queries_filepath=abspath(join(__file__, "../../../data/bsard_v1questions_fr_train.csv")),
+                               queries_filepath=abspath(join(__file__, "../../../data/bsard_v1/questions_fr_train.csv")),
                                documents_filepath=abspath(join(__file__, "../../../data/bsard_v1/articles_fr.csv")),
                                batch_size=22, #NB: There are ~4500 training samples -> num_steps_per_epoch = 4500/batch_size = .
                                epochs=100,

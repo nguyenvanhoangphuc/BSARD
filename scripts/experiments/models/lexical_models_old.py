@@ -10,7 +10,6 @@ from sklearn.metrics import pairwise_distances
 from sklearn.metrics.pairwise import cosine_similarity
 
 from utils.common import log_step
-from utils.mecab_tokenizer import tokenize_mecab
 
 
 class TFIDFRetriever:
@@ -33,20 +32,21 @@ class TFIDFRetriever:
     def search(self, q, top_k):
         results = dict()
         for i, doc in enumerate(self.retrieval_corpus):
-            # print('q',q)
-            # print('doc',doc)
-            # print("self.score(q, doc)",self.score(q, doc))
+            print('q',q)
+            print('doc',doc)
+            print("self.score(q, doc)",self.score(q, doc))
             results[i+1] = self.score(q, doc) #NB: '+1' because doc_ids in BSARD start at 1.
         return sorted(results.items(), key=lambda x: x[1], reverse=True)[:top_k]
 
     def score(self, q, d):
         score = 0.0
-        for t in tokenize_mecab(q):
+        print("len(q.split())", len(q.split()))
+        for t in q.split():
             score += self._compute_tfidf(t, d)
         return score
 
     def _build_vocabulary(self):
-        return sorted(set(itertools.chain.from_iterable([tokenize_mecab(doc.lower()) for doc in self.retrieval_corpus])))
+        return sorted(set(itertools.chain.from_iterable([doc.lower().split() for doc in self.retrieval_corpus])))
 
     def _compute_idfs(self):
         idfs = dict.fromkeys(self.vocab, 0)
@@ -59,7 +59,7 @@ class TFIDFRetriever:
         return math.log10(self.N / (df + 1))
 
     def _compute_tf(self, t, d):
-        return tokenize_mecab(d).count(t)
+        return d.split().count(t)
 
     def _compute_tfidf(self, t, d):
         tf = self._compute_tf(t, d)
@@ -76,14 +76,14 @@ class BM25Retriever(TFIDFRetriever):
     
     def score(self, q, d):
         score = 0.0
-        for t in tokenize_mecab(q):
+        for t in q.split():
             tf = self._compute_tf(t, d)
             idf = self.idfs[t] if t in self.idfs else math.log10((self.N + 0.5)/0.5)
-            score += idf * (tf * (self.k1 + 1)) / (tf + self.k1 * (1 - self.b + self.b * len(tokenize_mecab(d))/self.avgdl))
+            score += idf * (tf * (self.k1 + 1)) / (tf + self.k1 * (1 - self.b + self.b * len(d.split())/self.avgdl))
         return score
 
     def _compute_avgdl(self):
-        return mean([len(tokenize_mecab(doc)) for doc in self.retrieval_corpus])
+        return mean([len(doc.split()) for doc in self.retrieval_corpus])
 
     def _compute_idf(self, t):
         df = sum([1 if t in doc else 0 for doc in self.retrieval_corpus])
@@ -97,15 +97,15 @@ class SWSNRetriever(BM25Retriever):
 
     def score(self, q, d):
         score = 0.0
-        for t in tokenize_mecab(d):
+        for t in d.split():
             sem = self._compute_sem(t, q)
             idf = self.idfs[t] if t in self.idfs else math.log10((self.N + 0.5)/0.5)
-            score += idf * (sem * (self.k1 + 1)) / (sem + self.k1 * (1 - self.b + self.b * len(tokenize_mecab(q))/self.avgdl))
+            score += idf * (sem * (self.k1 + 1)) / (sem + self.k1 * (1 - self.b + self.b * len(q.split())/self.avgdl))
         return score
 
     def _compute_sem(self, t, q):
         term_embedding = self._get_word_embedding(t)
-        query_embeddings = [self._get_word_embedding(w) for w in tokenize_mecab(q)]
+        query_embeddings = [self._get_word_embedding(w) for w in q.split()]
         cosines = [cosine_similarity([term_embedding], [embedding])[0,0] for embedding in query_embeddings]
         return np.max(cosines)
 

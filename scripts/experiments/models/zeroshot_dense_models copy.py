@@ -9,7 +9,6 @@ import numpy as np
 from statistics import mean
 from sklearn.metrics import pairwise_distances
 from sklearn.metrics.pairwise import cosine_similarity
-from utils.mecab_tokenizer import tokenize_mecab
 
 import torch
 import fasttext
@@ -77,7 +76,7 @@ class DenseRetriever:
             sys.exit("Pooling strategy not known, please use 'mean' or 'max'.")
 
     def _get_word_embeddings(self, text):
-        return [self.model[w] for w in tokenize_mecab(text)]
+        return [self.model[w] for w in text.split()]
 
 
 class Word2vecRetriever(DenseRetriever):
@@ -91,7 +90,7 @@ class Word2vecRetriever(DenseRetriever):
                          retrieval_corpus=retrieval_corpus)
 
     def _get_word_embeddings(self, text):
-        return [self.model[w] for w in tokenize_mecab(text) if w in self.vocab]
+        return [self.model[w] for w in text.split() if w in self.vocab]
 
 
 class FasttextRetriever(DenseRetriever):

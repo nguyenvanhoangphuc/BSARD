@@ -10,14 +10,15 @@ from utils.eval import Evaluator
 from utils.data import TextPreprocessor
 from models.lexical_models import TFIDFRetriever, BM25Retriever, SWSNRetriever
 from models.zeroshot_dense_models import Word2vecRetriever, FasttextRetriever, BERTRetriever
-import sys
+
+
 
 def main(args):
     print("Loading questions and articles...")
     dfA = pd.read_csv(args.articles_path)
     dfQ_test = pd.read_csv(args.test_questions_path)
     ground_truths = dfQ_test['article_ids'].apply(lambda x: list(map(int, x.split(',')))).tolist()
-    print(len(ground_truths))
+
     if not args.retriever == 'bert':
         print("Preprocessing articles and questions (lemmatizing={})...".format(args.lem))
         cleaner = TextPreprocessor(spacy_model="fr_core_news_md")
@@ -26,9 +27,6 @@ def main(args):
     else:
         articles = dfA['article'].tolist()
         questions = dfQ_test['question'].tolist()
-        
-    print(len(articles))
-    print(len(questions))
 
     print("Initializing the {} retriever model...".format(args.retriever))
     if args.retriever == 'tfidf':
@@ -43,21 +41,13 @@ def main(args):
         best_checkpoint = abspath(join(__file__, "../embeddings/fasttext/fasttext_frCc_cbow_d300.bin"))
         retriever = FasttextRetriever(model_path_or_name=best_checkpoint, pooling_strategy='mean', retrieval_corpus=articles)
     elif args.retriever == 'bert':
-        # for French
-        # model_name = 'camembert-base' 
-        # for Japanese
-        model_name = 'cl-tohoku/bert-base-japanese'
-        # or 
-        # model_name = 'xlm-roberta-base'
-        retriever = BERTRetriever(model_path_or_name=model_name, pooling_strategy='mean', retrieval_corpus=articles)
+        retriever = BERTRetriever(model_path_or_name='camembert-base', pooling_strategy='mean', retrieval_corpus=articles)
 
     print("Running model on test questions...")
     if args.retriever == 'tfidf' or args.retriever == 'bm25':
         retrieved_docs = retriever.search_all(questions, top_k=500)
     else:
         retrieved_docs = retriever.search_all(questions, top_k=500, dist_metric='cosine')
-    print(len(retrieved_docs))
-    print(retrieved_docs[1])
 
     print("Computing the retrieval scores...")
     evaluator = Evaluator()
