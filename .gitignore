@@ -147,3 +147,6 @@ dmypy.json
 *.bin
 *.gz
 *.json
+
+# cache
+runs/
