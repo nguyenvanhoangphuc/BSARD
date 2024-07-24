@@ -46,9 +46,9 @@ def main(args):
         # for French
         # model_name = 'camembert-base' 
         # for Japanese
-        model_name = 'cl-tohoku/bert-base-japanese'
+        # model_name = 'cl-tohoku/bert-base-japanese'
         # or 
-        # model_name = 'xlm-roberta-base'
+        model_name = 'xlm-roberta-base'
         retriever = BERTRetriever(model_path_or_name=model_name, pooling_strategy='mean', retrieval_corpus=articles)
 
     print("Running model on test questions...")

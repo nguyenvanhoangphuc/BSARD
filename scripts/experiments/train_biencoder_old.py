@@ -13,8 +13,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 import transformers
-# from transformers import AdamW
-from torch.optim import AdamW
+from transformers import AdamW
 transformers.logging.set_verbosity_error()
 
 from utils.data import BSARDataset
@@ -27,12 +26,10 @@ class BiEncoderTrainer(object):
     def __init__(self, 
                  model: nn.Module,
                  loss_fn: nn.Module,
-                 train_queries_filepath: str,
-                 valid_queries_filepath: str,
+                 queries_filepath: str,
                  documents_filepath: str,
                  batch_size: int, 
                  epochs: int,
-                 queries_filepath: str = "",
                  learning_rate: float = 2e-5, 
                  weight_decay: float = 0.01,
                  scheduler_type: str = 'warmuplinear',
@@ -61,14 +58,7 @@ class BiEncoderTrainer(object):
 
         # Datasets.
         documents_df = pd.read_csv(documents_filepath)
-        
-        if queries_filepath != "":
-            train_queries_df, val_queries_df = self.split_train_val(queries_filepath, train_frac=0.8)
-        else:
-            train_queries_df = pd.read_csv(train_queries_filepath)
-            val_queries_df = pd.read_csv(valid_queries_filepath)
-        train_queries_df.info()
-        val_queries_df.info()
+        train_queries_df, val_queries_df = self.split_train_val(queries_filepath, train_frac=0.8)
 
         # Training Dataloader.
         train_dataset = BSARDataset(train_queries_df, documents_df)
@@ -137,7 +127,7 @@ class BiEncoderTrainer(object):
             {'params': [p for n, p in self.model.named_parameters() if not any(nd in n for nd in no_decay)], 'weight_decay': self.weight_decay},
             {'params': [p for n, p in self.model.named_parameters() if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
         ]
-        return AdamW(optimizer_grouped_params, lr=self.lr)
+        return transformers.AdamW(optimizer_grouped_params, lr=self.lr)
 
     def get_scheduler(self, t_total: int):
         """Returns the correct learning rate scheduler. 
@@ -272,8 +262,8 @@ class BiEncoderTrainer(object):
 
 if __name__ == '__main__':
     # 1. Initialize a new BiEncoder model to train.
-    model = BiEncoder(is_siamese=False,
-                      q_model_name_or_path='xlm-roberta-base',
+    model = BiEncoder(is_siamese=True,
+                      q_model_name_or_path='camembert-base',  # french model: 'camembert-base' # japanese model: 'cl-tohoku/bert-base-japanese'
                       truncation=True,
                       max_input_len=1000,
                       chunk_size=200,
@@ -282,20 +272,16 @@ if __name__ == '__main__':
                       score_fn='dot')
     
     # 1'. OR load an already-trained BiEncoder.
-    checkpoint_path = "../../../output/training/Jul23-15-46-59/9"
-    checkpoint_path = abspath(join(__file__, checkpoint_path))
-    model = BiEncoder.load(checkpoint_path)
+    # checkpoint_path = "output/training/Dec14-15-29-56_siamese-camembert-base-1000-200-20-22-fp16/99"
+    # model = BiEncoder.load(checkpoint_path)
 
     # 2. Initialize the BiEncoder Trainer.
     trainer = BiEncoderTrainer(model=model, 
                                loss_fn=nn.CrossEntropyLoss(), 
-                            #    queries_filepath=abspath(join(__file__, "../../../data/japanlaws/questions_ja_train.csv")),
-                               train_queries_filepath=abspath(join(__file__, "../../../data/japanlaws/questions_ja_train.csv")),
-                               valid_queries_filepath=abspath(join(__file__, "../../../data/japanlaws/questions_ja_test.csv")),
-                               documents_filepath=abspath(join(__file__, "../../../data/japanlaws/articles_ja.csv")),
-                               batch_size=4, #NB: There are ~4500 training samples -> num_steps_per_epoch = 4500/batch_size = .
-                               epochs=3,
-                               learning_rate=5e-6,
+                               queries_filepath=abspath(join(__file__, "../../../data/bsard_v1/questions_fr_train.csv")),
+                               documents_filepath=abspath(join(__file__, "../../../data/bsard_v1/articles_fr.csv")),
+                               batch_size=22, #NB: There are ~4500 training samples -> num_steps_per_epoch = 4500/batch_size = .
+                               epochs=100,
                                warmup_steps=500,
                                log_steps=10, 
                                use_amp=True)

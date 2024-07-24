@@ -85,7 +85,7 @@ class BSARDataset(Dataset):
                 .apply(pd.Series)
                 .stack()
                 .reset_index()
-                .drop(['question_short','question_full','question','level_4'], axis=1))
+                .drop(['category','subcategory','extra_description','question','level_5'], axis=1))
         new_queries.info()
         print(new_queries[0])
         return (queries
@@ -94,8 +94,8 @@ class BSARDataset(Dataset):
                 .apply(pd.Series)
                 .stack()
                 .reset_index()
-                # .drop(['category','subcategory','extra_description','question','level_5'], axis=1)
-                .drop(['question_short','question_full','question','level_4'], axis=1) #id,question_short,question,question_full,article_ids
+                .drop(['category','subcategory','extra_description','question','level_5'], axis=1)
+                # .drop(['question_short','question_full','question','level_4'], axis=1) #id,question_short,question,question_full,article_ids
                 .rename(columns={0:'article_id','id':'question_id'})
                 .apply(pd.to_numeric)
                 .sample(frac=1, random_state=42).reset_index(drop=True)

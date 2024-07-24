@@ -96,6 +96,12 @@ class BiEncoder(nn.Module):
         os.makedirs(output_path, exist_ok=True)
         with open(os.path.join(output_path, f'{type(self).__name__}_config.json'), 'w') as fOut:
             json.dump(self.config, fOut, indent=2)
+
+        # Xoá model trước đó
+        dir_root = '/'.join(output_path.split('/')[:-1])
+        index = int(output_path.split('/')[-1])
+        if os.path.exists(os.path.join(dir_root, str(index-1))):
+            os.system(f'rm -rf {os.path.join(dir_root, str(index-1))}')
     
     @staticmethod
     def load(input_path: str):

@@ -8,7 +8,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 class Evaluator:
-    def __init__(self, metrics_at_k: Dict[str, List[int]] = {'recall': [100, 200, 500], 'map': [100], 'mrr': [100]}):
+    def __init__(self, metrics_at_k: Dict[str, List[int]] = {'recall': [3, 5, 10, 20, 50, 100, 200, 500], 'map': [100], 'mrr': [100]}):
         self.metrics_at_k = metrics_at_k
 
     def compute_all_metrics(self, all_results: List[List[int]], all_ground_truths: List[List[int]]):
@@ -61,7 +61,7 @@ class BiEncoderEvaluator(Evaluator):
                  documents: Dict[int, str],  #doc_id -> doc
                  relevant_pairs: Dict[int, List[int]], # qid -> List[doc_id]
                  score_fn: str,
-                 metrics_at_k: Dict[str, List[int]] = {'recall': [100, 200, 500], 'map': [100], 'mrr': [100]},
+                 metrics_at_k: Dict[str, List[int]] = {'recall': [3, 5, 10, 20, 50, 100, 200, 500], 'map': [100], 'mrr': [100]},
         ):
         super().__init__(metrics_at_k)
         assert score_fn in ['dot', 'cos'], f"Unknown score function: {score_fn}"
