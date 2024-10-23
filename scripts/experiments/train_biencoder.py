@@ -173,7 +173,8 @@ class BiEncoderTrainer(object):
             train_correct, log_correct = 0, 0
 
             self.model.train()
-            for step, batch in enumerate(self.train_dataloader):
+            for step, batch in tqdm(enumerate(self.train_dataloader), desc="Step"):         # New
+            # for step, batch in enumerate(self.train_dataloader):                          # Old
 
                 # Step 1: Move input data to device.
                 q_input_ids = batch['q_input_ids'].to(self.device)
@@ -272,30 +273,37 @@ class BiEncoderTrainer(object):
 
 if __name__ == '__main__':
     # 1. Initialize a new BiEncoder model to train.
-    model = BiEncoder(is_siamese=False,
+    # q_model_name_or_path='xlm-roberta-base',
+    # english: 'google-bert/bert-base-uncased'
+    model = BiEncoder(is_siamese=True,
                       q_model_name_or_path='xlm-roberta-base',
                       truncation=True,
-                      max_input_len=1000,
-                      chunk_size=200,
+                      max_input_len=512,    #1000 (root)
+                      chunk_size=512,          # 200 (root)
                       window_size=20,
                       pooling_mode='cls',
                       score_fn='dot')
     
     # 1'. OR load an already-trained BiEncoder.
-    checkpoint_path = "../../../output/training/Jul23-15-46-59/9"
-    checkpoint_path = abspath(join(__file__, checkpoint_path))
-    model = BiEncoder.load(checkpoint_path)
+    # /output/training/Jul2407/2
+    # /output/training/Jul23-15-46-59/9
+    # BSARD/output/training/Jul24-08-37-45/19
+    # BSARD/output/training/Oct07-10-30-02/33 (two-tower)
+    # BSARD/output/training/Oct10-10-42-02/49 (siamese)
+    # checkpoint_path = "../../../output/training/Oct10-10-42-02/49"
+    # checkpoint_path = abspath(join(__file__, checkpoint_path))
+    # model = BiEncoder.load(checkpoint_path)
 
     # 2. Initialize the BiEncoder Trainer.
     trainer = BiEncoderTrainer(model=model, 
                                loss_fn=nn.CrossEntropyLoss(), 
-                            #    queries_filepath=abspath(join(__file__, "../../../data/japanlaws/questions_ja_train.csv")),
-                               train_queries_filepath=abspath(join(__file__, "../../../data/japanlaws/questions_ja_train.csv")),
-                               valid_queries_filepath=abspath(join(__file__, "../../../data/japanlaws/questions_ja_test.csv")),
-                               documents_filepath=abspath(join(__file__, "../../../data/japanlaws/articles_ja.csv")),
-                               batch_size=4, #NB: There are ~4500 training samples -> num_steps_per_epoch = 4500/batch_size = .
-                               epochs=3,
-                               learning_rate=5e-6,
+                            #    queries_filepath=abspath(join(__file__, "../../../data/ms_marco/questions_ja_train.csv")),
+                               train_queries_filepath=abspath(join(__file__, "../../../data/50k_ms_marco_BSARD/questions_ms_marco_50k_train.csv")),
+                               valid_queries_filepath=abspath(join(__file__, "../../../data/50k_ms_marco_BSARD/questions_ms_marco_50k_validation.csv")),
+                               documents_filepath=abspath(join(__file__, "../../../data/50k_ms_marco_BSARD/articles_ms_marco_50k.csv")),
+                               batch_size=24, #NB: There are ~4500 training samples -> num_steps_per_epoch = 4500/batch_size = .
+                               epochs=50,
+                               learning_rate=2e-6,
                                warmup_steps=500,
                                log_steps=10, 
                                use_amp=True)

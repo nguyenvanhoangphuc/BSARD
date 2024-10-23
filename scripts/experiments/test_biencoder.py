@@ -17,12 +17,30 @@ if __name__ == '__main__':
     # "../../../output/training/Jul22-13-59-26/9"
     # /output/training/Jul23-15-46-59/9
     # /output/training/Jul23-18-14-22/2
-    checkpoint_path = abspath(join(__file__, "../../../output/training/Jul23-18-14-22/2"))
+    # output/training/Jul24-08-21-05/2 # 13
+    # output/training/Jul2407/2 # 16
+    # output/training/Jul24-08-37-45/19   #36 epochs
+    # BSARD/output/training/Jul24-10-16-25/99 # 100 e
+    # BSARD/output/training/Aug14-09-42-18/99 # full marco two-tower
+    # BSARD/output/training/Aug14-12-47-24/99 # full marco siamese
+    # BSARD/output/training/Oct07-07-17-36/0 # siamese (full marco)
+    # /BSARD/output/training/Oct07-10-30-02/33  # two-tower (full marco)
+    # BSARD/output/training/Oct07-08-51-35/30 #  siamese (full marco)
+    # BSARD/output/training/Oct07-08-51-35/89 # 90e siamese (full marco)
+    # BSARD/output/training/Oct08-19-05-50/16 # 50e two-tower (full marco)
+    # BSARD/output/training/Oct10-10-42-02/36 # siamese 512 512 (1110)
+    # BSARD/output/training/Oct10-10-42-02/49 # siamese 512 512 batch 16 (1310)
+    # BSARD/output/training/Oct14-10-15-10/37 # siamese 256 256 bert 16 (1410)
+    # BSARD/output/training/Oct14-10-36-11/40 # two-tower 256 256 bert 16 (1410)
+    # /Oct14-10-15-10/49 # siamese 256 256 bert 16 50e (1410)
+    # /Oct14-10-36-11/49 # two-tower 256 256 bert 16 50e (1410)
+    # BSARD/output/training/Oct16-02-24-07/49 # two-tower 512 512 bert 16 50e (1610)
+    checkpoint_path = abspath(join(__file__, "../../../output/training/Oct16-02-24-07/49"))   
     model = BiEncoder.load(checkpoint_path)
 
     # 2. Load the test set.
-    test_queries_df = pd.read_csv(abspath(join(__file__, "../../../data/japanlaws/questions_ja_test.csv")))
-    documents_df = pd.read_csv(abspath(join(__file__, "../../../data/japanlaws/articles_ja.csv")))
+    test_queries_df = pd.read_csv(abspath(join(__file__, "../../../data/50k_ms_marco_BSARD/questions_ms_marco_50k_test.csv")))
+    documents_df = pd.read_csv(abspath(join(__file__, "../../../data/50k_ms_marco_BSARD/articles_ms_marco_50k.csv")))
     test_dataset = BSARDataset(test_queries_df, documents_df)
 
     # 3. Initialize the Evaluator.
@@ -34,10 +52,10 @@ if __name__ == '__main__':
     # 4. Run trained model and compute scores.
     scores = evaluator(model=model,
                        device=torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"),
-                       batch_size=512)  
+                       batch_size=16)  
 
     # 5. Save results.
-    output_path = abspath(join(__file__, "../../../output/zeroshotja/test-run"))
+    output_path = abspath(join(__file__, "../../../output/finetune_marco"))
     os.makedirs(output_path, exist_ok=True)
-    with open(join(output_path, 'test_scores_TwoTower_2.json'), 'w') as fOut:
+    with open(join(output_path, 'test_scores_twotower_50e_1610_512_16.json'), 'w') as fOut:
         json.dump(scores, fOut, indent=2)

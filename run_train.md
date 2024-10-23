@@ -16,8 +16,9 @@ python scripts/experiments/run_zeroshot_evaluation.py \
 python scripts/experiments/run_zeroshot_evaluation.py --articles_path data/bsard_v1/articles_fr.csv --test_questions_path data/bsard_v1/questions_fr_test.csv --retriever tfidf --lem --output_dir /output/zeroshot/test-run
 python scripts/experiments/run_zeroshot_evaluation.py --articles_path data/bsard_v1/articles_fr.csv --test_questions_path data/bsard_v1/questions_fr_test.csv --retriever bm25 --lem --output_dir /output/zeroshot/test-run
 # japan
-python scripts/experiments/run_zeroshot_evaluation.py --articles_path data/japanlaws/articles_ja.csv --test_questions_path data/japanlaws/questions_ja_test.csv --retriever tfidf --lem --output_dir /output/zeroshotja/test-run
-python scripts/experiments/run_zeroshot_evaluation.py --articles_path data/japanlaws/articles_ja.csv --test_questions_path data/japanlaws/questions_ja_test.csv --retriever bm25 --lem --output_dir /output/zeroshotja/test-run
+CUDA_VISIBLE_DEVICES=1
+python scripts/experiments/run_zeroshot_evaluation.py --articles_path data/japanlaws/articles_ja.csv --test_questions_path data/japanlaws/questions_ja_test.csv --retriever tfidf --lem --output_dir ./output/zeroshotja/test-run
+python scripts/experiments/run_zeroshot_evaluation.py --articles_path data/japanlaws/articles_ja.csv --test_questions_path data/japanlaws/questions_ja_test.csv --retriever bm25 --lem --output_dir ./output/zeroshotja/test-run
 
 bash scripts/experiments/utils/download_embeddings.sh
 
@@ -34,8 +35,14 @@ python scripts/experiments/run_zeroshot_evaluation.py --articles_path data/bsard
 # run bert no train
 python scripts/experiments/run_zeroshot_evaluation.py --articles_path data/bsard_v1/articles_fr.csv --test_questions_path data/bsard_v1/questions_fr_test.csv --retriever bert --output_dir output/zeroshot/test-run
 # japan
-python scripts/experiments/run_zeroshot_evaluation.py --articles_path data/japanlaws/articles_ja.csv --test_questions_path data/japanlaws/questions_ja_test.csv --retriever bert --output_dir /output/zeroshotja/test-run
+python scripts/experiments/run_zeroshot_evaluation.py --articles_path data/japanlaws/articles_ja.csv --test_questions_path data/japanlaws/questions_ja_test.csv --retriever bert --output_dir ./output/zeroshotja/test-run
 
-python scripts/experiments/train_biencoder.py
+python scripts/experiments/train_biencoder.py > msmarco.log
 
-python scripts/experiments/test_biencoder.py
+python scripts/experiments/test_biencoder.py > test_msmarco.log
+
+CUDA_VISIBLE_DEVICES=1
+
+# full command for run train and run test
+CUDA_VISIBLE_DEVICES=1 python scripts/experiments/train_biencoder.py > msmarco.log
+CUDA_VISIBLE_DEVICES=0 python scripts/experiments/test_biencoder.py
