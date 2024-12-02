@@ -44,5 +44,6 @@ python scripts/experiments/test_biencoder.py > test_msmarco.log
 CUDA_VISIBLE_DEVICES=1
 
 # full command for run train and run test
-CUDA_VISIBLE_DEVICES=1 python scripts/experiments/train_biencoder.py > msmarco.log
-CUDA_VISIBLE_DEVICES=0 python scripts/experiments/test_biencoder.py
+CUDA_VISIBLE_DEVICES=0 python scripts/experiments/train_biencoder.py > ms20k_bert_128_16_2310.log
+CUDA_VISIBLE_DEVICES=1 python scripts/experiments/train_biencoder.py > sia_ja_xlm_512_8_2810_20e.log
+CUDA_VISIBLE_DEVICES=1 python scripts/experiments/test_biencoder.py

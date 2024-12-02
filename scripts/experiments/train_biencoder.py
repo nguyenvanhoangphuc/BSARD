@@ -276,7 +276,7 @@ if __name__ == '__main__':
     # q_model_name_or_path='xlm-roberta-base',
     # english: 'google-bert/bert-base-uncased'
     model = BiEncoder(is_siamese=True,
-                      q_model_name_or_path='xlm-roberta-base',
+                      q_model_name_or_path='google-bert/bert-base-uncased',
                       truncation=True,
                       max_input_len=512,    #1000 (root)
                       chunk_size=512,          # 200 (root)
@@ -290,18 +290,22 @@ if __name__ == '__main__':
     # BSARD/output/training/Jul24-08-37-45/19
     # BSARD/output/training/Oct07-10-30-02/33 (two-tower)
     # BSARD/output/training/Oct10-10-42-02/49 (siamese)
-    # checkpoint_path = "../../../output/training/Oct10-10-42-02/49"
-    # checkpoint_path = abspath(join(__file__, checkpoint_path))
-    # model = BiEncoder.load(checkpoint_path)
+    # BSARD/output/training/Oct28-07-37-26/24 (siamese 85e)
+    # BSARD/output/training/Oct29-02-33-06/14 (29/10 sia 15e)
+    # BSARD/output/training/Oct29-08-20-14/49 (29/10 sia 50e bert)
+    # BSARD/output/training/Oct29-08-18-29/49 (29/10 two 50e bert)
+    checkpoint_path = "../../../output/training/Oct29-08-18-29/49"
+    checkpoint_path = abspath(join(__file__, checkpoint_path))
+    model = BiEncoder.load(checkpoint_path)
 
     # 2. Initialize the BiEncoder Trainer.
     trainer = BiEncoderTrainer(model=model, 
                                loss_fn=nn.CrossEntropyLoss(), 
                             #    queries_filepath=abspath(join(__file__, "../../../data/ms_marco/questions_ja_train.csv")),
-                               train_queries_filepath=abspath(join(__file__, "../../../data/50k_ms_marco_BSARD/questions_ms_marco_50k_train.csv")),
-                               valid_queries_filepath=abspath(join(__file__, "../../../data/50k_ms_marco_BSARD/questions_ms_marco_50k_validation.csv")),
-                               documents_filepath=abspath(join(__file__, "../../../data/50k_ms_marco_BSARD/articles_ms_marco_50k.csv")),
-                               batch_size=24, #NB: There are ~4500 training samples -> num_steps_per_epoch = 4500/batch_size = .
+                               train_queries_filepath=abspath(join(__file__, "../../../data/japanlaws/questions_ja_train.csv")),
+                               valid_queries_filepath=abspath(join(__file__, "../../../data/japanlaws/questions_ja_valid.csv")),
+                               documents_filepath=abspath(join(__file__, "../../../data/japanlaws/articles_ja.csv")),
+                               batch_size=8, #NB: There are ~4500 training samples -> num_steps_per_epoch = 4500/batch_size = .
                                epochs=50,
                                learning_rate=2e-6,
                                warmup_steps=500,

@@ -5,10 +5,55 @@ from torch import nn
 from statistics import mean
 from sentence_transformers import util
 from torch.utils.tensorboard import SummaryWriter
+import numpy as np
 
 
 class Evaluator:
-    def __init__(self, metrics_at_k: Dict[str, List[int]] = {'recall': [3, 5, 10, 20, 50, 100, 200, 500], 'map': [100], 'mrr': [100]}):
+    # def __init__(self, metrics_at_k: Dict[str, List[int]] = {'recall': [3, 5, 10, 20, 50, 100, 200, 500], 'map': [100], 'mrr': [100]}):
+    #     self.metrics_at_k = metrics_at_k
+
+    # def compute_all_metrics(self, all_results: List[List[int]], all_ground_truths: List[List[int]]):
+    #     scores = dict()
+    #     for k in self.metrics_at_k['recall']:
+    #         recall_scalar = self.compute_mean_score(self.recall, all_ground_truths, all_results, k)
+    #         scores[f'recall@{k}'] = recall_scalar
+
+    #     for k in self.metrics_at_k['map']:
+    #         map_scalar = self.compute_mean_score(self.average_precision, all_ground_truths, all_results, k)
+    #         scores[f'map@{k}'] = map_scalar
+
+    #     for k in self.metrics_at_k['mrr']:
+    #         mrr_scalar = self.compute_mean_score(self.reciprocal_rank, all_ground_truths, all_results, k)
+    #         scores[f'mrr@{k}'] = mrr_scalar
+    #     return scores
+
+    # def compute_mean_score(self, func, all_ground_truths: List[List[int]], all_results: List[List[int]], k: int = None):
+    #     return mean([func(truths, res, k) for truths, res in zip(all_ground_truths, all_results)])
+
+    # def precision(self, ground_truths: List[int], results: List[int], k: int = None):
+    #     k = len(results) if k is None else k
+    #     relevances = [1 if d in ground_truths else 0 for d in results[:k]]
+    #     return sum(relevances)/len(results[:k])
+
+    # def recall(self, ground_truths: List[int], results: List[int], k: int = None):
+    #     k = len(results) if k is None else k
+    #     relevances = [1 if d in ground_truths else 0 for d in results[:k]]
+    #     return sum(relevances)/len(ground_truths)
+
+    # def fscore(self, ground_truths: List[int], results: List[int], k: int = None):
+    #     p = self.precision(ground_truths, results, k)
+    #     r = self.recall(ground_truths, results, k)
+    #     return (2*p*r)/(p+r) if (p != 0.0 or r != 0.0) else 0.0
+
+    # def reciprocal_rank(self, ground_truths: List[int], results: List[int], k: int = None):
+    #     k = len(results) if k is None else k
+    #     return max([1/(i+1) if d in ground_truths else 0.0 for i, d in enumerate(results[:k])])
+
+    # def average_precision(self, ground_truths: List[int], results: List[int], k: int = None):
+    #     k = len(results) if k is None else k
+    #     p_k = [self.precision(ground_truths, results, k=i+1) if d in ground_truths else 0 for i, d in enumerate(results[:k])]
+    #     return sum(p_k)/len(ground_truths)
+    def __init__(self, metrics_at_k: Dict[str, List[int]] = {'recall': [3, 5, 10, 20, 50, 100, 200, 500], 'map': [100], 'mrr': [100], 'ndcg': [10]}):
         self.metrics_at_k = metrics_at_k
 
     def compute_all_metrics(self, all_results: List[List[int]], all_ground_truths: List[List[int]]):
@@ -24,6 +69,11 @@ class Evaluator:
         for k in self.metrics_at_k['mrr']:
             mrr_scalar = self.compute_mean_score(self.reciprocal_rank, all_ground_truths, all_results, k)
             scores[f'mrr@{k}'] = mrr_scalar
+
+        for k in self.metrics_at_k.get('ndcg', []):
+            ndcg_scalar = self.compute_mean_score(self.ndcg, all_ground_truths, all_results, k)
+            scores[f'ndcg@{k}'] = ndcg_scalar
+
         return scores
 
     def compute_mean_score(self, func, all_ground_truths: List[List[int]], all_results: List[List[int]], k: int = None):
@@ -53,6 +103,24 @@ class Evaluator:
         p_k = [self.precision(ground_truths, results, k=i+1) if d in ground_truths else 0 for i, d in enumerate(results[:k])]
         return sum(p_k)/len(ground_truths)
 
+    def ndcg(self, ground_truths: List[int], results: List[int], k: int = None):
+        k = len(results) if k is None else k
+
+        # Compute DCG
+        dcg = sum([1 / np.log2(i + 2) if results[i] in ground_truths else 0 for i in range(k)])
+
+        # Compute IDCG
+        ideal_relevances = [1] * min(k, len(ground_truths))  # Assume ideal ranking has all relevant docs
+        idcg = sum([rel / np.log2(i + 2) for i, rel in enumerate(ideal_relevances)])
+
+        # Calculate NDCG
+        return dcg / idcg if idcg > 0 else 0.0
+
+    def my_recall(self, ground_truths: List[int], results: List[int], k: int = None):
+        k = len(results) if k is None else k
+        relevances = [1 if d in ground_truths else 0 for d in results[:k]]
+        return sum(relevances) / min(k, len(ground_truths))
+
 
 
 class BiEncoderEvaluator(Evaluator):
@@ -61,7 +129,7 @@ class BiEncoderEvaluator(Evaluator):
                  documents: Dict[int, str],  #doc_id -> doc
                  relevant_pairs: Dict[int, List[int]], # qid -> List[doc_id]
                  score_fn: str,
-                 metrics_at_k: Dict[str, List[int]] = {'recall': [3, 5, 10, 20, 50, 100, 200, 500], 'map': [100], 'mrr': [100]},
+                 metrics_at_k: Dict[str, List[int]] = {'recall': [3, 5, 10, 20, 50, 100, 200, 500], 'map': [10, 100], 'mrr': [10, 100], 'ndcg': [10]},
         ):
         super().__init__(metrics_at_k)
         assert score_fn in ['dot', 'cos'], f"Unknown score function: {score_fn}"
@@ -114,5 +182,17 @@ class BiEncoderEvaluator(Evaluator):
             if writer is not None:
                 writer.add_scalar(f'Val/mrr/mrr_at_{k}', mrr_scalar, epoch)
             scores[f'mrr@{k}'] = mrr_scalar
+
+        for k in self.metrics_at_k['ndcg']:
+            ndcg_scalar = self.compute_mean_score(self.ndcg, all_ground_truths, all_results, k)
+            if writer is not None:
+                writer.add_scalar(f'Val/ndcg/ndcg_at_{k}', ndcg_scalar, epoch)
+            scores[f'ndcg@{k}'] = ndcg_scalar
+
+        for k in self.metrics_at_k['recall']:
+            my_recall_scalar = self.compute_mean_score(self.my_recall, all_ground_truths, all_results, k)
+            if writer is not None:
+                writer.add_scalar(f'Val/my_recall/my_recall_at_{k}', my_recall_scalar, epoch)
+            scores[f'my_recall@{k}'] = my_recall_scalar
 
         return scores
